@@ -1,0 +1,132 @@
+void drawopmenu(int location,int *menu){
+    const char* menu_title = opinfo[currentOp].title;
+    DrawText(menu_title,20,15,30,BLACK);
+
+    Rectangle back = {300,500,200,50};
+    Rectangle inputbox1 = {300,100,200,40};
+    Rectangle inputbox2 = {300,150,200,40};
+    Rectangle execute= {0};
+    Rectangle visualBox = {0};
+    Rectangle clear = {0};
+    
+    DrawRectangleRec(back,RED);
+    DrawText("BACK", back.x+60, back.y+15,20,BLACK);
+
+
+    if(CheckCollisionPointRec(GetMousePosition(),back) &&
+       IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
+        *menu = location;
+        buffer1[0]='\0';
+        buffer2[0]='\0';
+        value=0;
+        position=0;
+        activebox=0;
+        showdll=0;
+    }
+
+    if(CheckCollisionPointRec(GetMousePosition(),inputbox1) &&
+       IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
+        activebox=0;
+    }
+
+    if(CheckCollisionPointRec(GetMousePosition(),inputbox2) &&
+       IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
+        activebox=1;
+    }
+   
+    int key= GetCharPressed();
+    
+    while(key>0){
+        if(isdigit(key)){
+            if(activebox==0){
+                int len = strlen(buffer1);
+                buffer1[len] = key;
+                buffer1[len+1] = '\0';
+            }
+            else{
+                int len = strlen(buffer2);
+                buffer2[len] = key;
+                buffer2[len+1] = '\0';
+            }
+        }
+        key = GetCharPressed();
+    }
+    if(IsKeyPressed(KEY_BACKSPACE)){
+        if(activebox==0){
+            int len = strlen(buffer1);
+            if(len>0) buffer1[len-1] = '\0';
+        }
+        else{
+            int len = strlen(buffer2);
+            if(len>0) buffer2[len-1] = '\0';
+        }
+    }
+    if(IsKeyPressed(KEY_ENTER)){
+        if(opinfo[currentOp].inputs == 1){
+            value = atoi(buffer1);
+        }
+        else if(opinfo[currentOp].inputs == 2){
+            position = atoi(buffer1);
+            value = atoi(buffer2);
+        }
+    }
+    
+    if(opinfo[currentOp].inputs==1){
+        DrawText(TextFormat("ENTER %s",opinfo[currentOp].label1),20,100,30,BLACK);
+        DrawRectangleRec(inputbox1, activebox==0? GRAY : LIGHTGRAY);
+        DrawText(buffer1,inputbox1.x+10,inputbox1.y+15,20,BLACK);
+        DrawText(TextFormat("%s = %d",opinfo[currentOp].label1,value),550,100,20,BLACK);
+
+        execute = (Rectangle){20,150,200,40};
+        DrawRectangleRec(execute,GRAY);
+        DrawText("EXECUTE", execute.x+20, execute.y+15,20,WHITE);
+
+        clear = (Rectangle){230,150,100,40};
+        DrawRectangleRec(clear,RED);
+        DrawText("CLEAR", clear.x+20, clear.y+15,20,WHITE);
+
+        visualBox = (Rectangle){20,200,760,300};
+        DrawRectangleLinesEx(visualBox,2,BLACK);
+    }
+    if(opinfo[currentOp].inputs==2){
+        DrawText(TextFormat("ENTER %s",opinfo[currentOp].label1),20,100,30,BLACK);
+        DrawRectangleRec(inputbox1, activebox==0? GRAY : LIGHTGRAY);
+        DrawText(buffer1,inputbox1.x+10,inputbox1.y+15,20,BLACK);
+        DrawText(TextFormat("%s = %d",opinfo[currentOp].label1,position),550,100,20,BLACK);
+
+        DrawText(TextFormat("ENTER %s",opinfo[currentOp].label2),20,150,30,BLACK);
+        DrawRectangleRec(inputbox2, activebox==1? GRAY : LIGHTGRAY);
+        DrawText(buffer2,inputbox2.x+10,inputbox2.y+15,20,BLACK);
+        DrawText(TextFormat("%s = %d",opinfo[currentOp].label2,value),550,150,20,BLACK);
+        
+        execute = (Rectangle){20,200,200,40};
+        DrawRectangleRec(execute,GRAY);
+        DrawText("EXECUTE", execute.x+20, execute.y+15,20,WHITE);
+
+        clear = (Rectangle){230,200,100,40};
+        DrawRectangleRec(clear,RED);
+        DrawText("CLEAR", clear.x+20, clear.y+15,20,WHITE);
+
+        visualBox = (Rectangle){20,250,760,300};
+        DrawRectangleLinesEx(visualBox,2,BLACK);
+    }
+
+    if(CheckCollisionPointRec(GetMousePosition(),execute) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
+        if(opinfo[currentOp].inputs == 1){
+            value = atoi(buffer1);
+        }
+        else if(opinfo[currentOp].inputs == 2){
+            position = atoi(buffer1);
+            value = atoi(buffer2);
+        }
+        runoperation();
+        showdll = 1;
+    }
+
+    if(CheckCollisionPointRec(GetMousePosition(),execute) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
+        clear_list();
+        showdll=1;
+    }
+
+    if(showdll) drawDLL(visualBox);
+}
