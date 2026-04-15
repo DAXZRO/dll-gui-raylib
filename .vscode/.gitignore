@@ -1,0 +1,14 @@
+# executables
+*.exe
+
+# object files
+*.o
+
+# vscode settings
+.vscode/
+
+# raylib library (not your code)
+raylib/
+
+# temp files
+*.txt
