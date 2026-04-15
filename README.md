@@ -31,7 +31,7 @@ It is implemented in **C** using the **raylib graphics library**, combining data
 
 ---
 
-### 🔍 Information Operations
+###  Information Operations
 
 - Search element
 - Get element at position
