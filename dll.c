@@ -3,125 +3,418 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "dll.h"
-struct node{
-    int data;
-    struct node* prev;
-    struct node* next;
-};
 
-struct node* head=NULL;
-struct node* tail=NULL;
+node* head = NULL;
+node* tail = NULL;
 
-void insert_beginning(int x){
-    struct node* new=(struct node*)malloc(sizeof(struct node));
-    new->data=x;
-    new->next=head;
-    new->prev=NULL;
-    if(head!=NULL)
-        head->prev=new;
-    else tail=new;
-    head=new;
-}
-void insert_random(int pos, int x){
+DLLStatus insert_beg(int x){
+    node *newnode = (node*)malloc(sizeof(node));
 
-    if(pos <= 1 || head == NULL){
-        insert_beginning(x);
-        return;
+    if(!newnode){
+        return DLL_ALLOC_FAILED;
     }
 
-    struct node* new = malloc(sizeof(struct node));
-    new->data = x;
+    newnode->data = x;
+    newnode->next = NULL;
+    newnode->prev = NULL;
 
-    struct node* temp = head;
+    if(!head){
+        head = tail = newnode;
+    }
+    else{
+        newnode->next = head;
+        head-> prev = newnode;
+        head = newnode;
+    }
 
-    for(int i = 1; i < pos-1 && temp->next != NULL; i++)
+    return DLL_OK;
+}
+
+DLLStatus insert_mid(int pos, int x){
+    if(pos <= 0){
+        return DLL_INVALID_POS;
+    }
+    
+    if(pos == 1){
+        return insert_beg(x);
+    }
+
+    if(!head && pos != 1){
+        return DLL_INVALID_POS;
+    }
+    node *temp = head;
+    for(int i = 0; i < pos - 2; i++){
+        if(!temp->next){
+            return DLL_INVALID_POS;
+        }
         temp = temp->next;
-
-    new->next = temp->next;
-    new->prev = temp;
-
-    if(temp->next != NULL)
-        temp->next->prev = new;
-    else
-        tail = new;
-
-    temp->next = new;
-}
-void insert_last(int x){
-    struct node* new=(struct node *)malloc(sizeof(struct node));
-    if(head==NULL){
-        head=new;
-        tail=new;
-        new->data=x;
-        new->next=NULL;
-        new->prev=NULL;
-        return;
     }
-    new->data=x;
-    new->next=NULL;
-    new->prev=tail;
-    tail->next=new;
-    tail=new;
-}
-void delete_beginning(){
-    if(head==NULL){
-        printf("ERROR: EMPTY LIST");
-        return;
+
+    if(temp->next == NULL){
+        return insert_end(x);
     }
-    struct node* temp=head;
-    head=head->next;
-    head->prev=NULL;
+
+    node *newnode = (node*)malloc(sizeof(node));
+    if(!newnode){
+        return DLL_ALLOC_FAILED;
+    }
+
+    newnode->data = x;
+    newnode->next = NULL;
+    newnode->prev = NULL;
+
+    newnode->next = temp->next;
+    newnode->prev = temp;
+    temp->next->prev = newnode;
+    temp->next = newnode;
+
+    return DLL_OK;
+}
+
+DLLStatus insert_end(int x){
+    node *newnode = (node*)malloc(sizeof(node));
+
+    if(!newnode){
+        return DLL_ALLOC_FAILED;
+    }
+
+    newnode->data = x;
+    newnode->next = NULL;
+    newnode->prev = NULL;
+
+    if(!head){
+        head = tail = newnode;
+    }
+    else{
+        newnode->prev = tail;
+        tail->next = newnode;
+        tail = newnode;
+    }
+
+    return DLL_OK;
+}
+
+DLLStatus insert_before(int x, int y){
+    if(!head){
+        return DLL_EMPTY;
+    }
+
+    node *temp = head;
+
+    while(temp){
+        if(temp->data == y){
+            break;
+        }
+        temp = temp->next;
+    }
+
+    if(!temp){
+        return DLL_ELEMENT_NOT_FOUND;
+    }
+
+    node *newnode = (node*)malloc(sizeof(node));
+
+    if(!newnode){
+        return DLL_ALLOC_FAILED;
+    }
+
+    newnode->data = x;
+
+    if(temp->prev == NULL){
+        newnode->next = head;
+        newnode->prev = NULL;
+        head->prev = newnode;
+        head = newnode;
+        return DLL_OK;
+    }
+
+    newnode->next = temp;
+    newnode->prev = temp->prev;
+    temp->prev->next = newnode;
+    temp->prev = newnode;
+    
+    return DLL_OK;
+}
+
+DLLStatus insert_after(int x, int y){
+    if(!head){
+        return DLL_EMPTY;
+    }
+
+    node *temp = head;
+
+    while(temp){
+        if(temp->data == y){
+            break;
+        }
+        temp = temp->next;
+    }
+
+    if(!temp){
+        return DLL_ELEMENT_NOT_FOUND;
+    }
+
+    node *newnode = (node*)malloc(sizeof(node));
+    if(!newnode){
+        return DLL_ALLOC_FAILED;
+    }
+    newnode->data = x;
+
+
+    if(temp->next == NULL){
+        newnode->next = NULL;
+        newnode->prev = tail;
+        tail->next = newnode;
+        tail = newnode;
+        return DLL_OK;
+    }
+
+    newnode->next = temp->next;
+    newnode->prev = temp;
+    temp->next->prev = newnode;
+    temp->next = newnode;
+
+    return DLL_OK;
+}
+
+DLLStatus del_beg(){
+    // empty list
+    if(!head){
+        return DLL_EMPTY;
+    }
+    // single node
+    if(head == tail){
+        free(head);
+        head = tail = NULL;
+        return DLL_OK;
+    }
+
+    // general case
+    node *temp = head;
+    head = head->next;
+    head->prev = NULL;
     free(temp);
+
+    return DLL_OK;
 }
-void delete_random(int pos){
-    if(head==NULL){
-        printf("ERROR: EMPTY LIST");
-        return;
+
+DLLStatus del_mid(int pos){
+    // invalid position
+    if(pos <= 0){
+        return DLL_INVALID_POS;
     }
-    struct node*temp=head;
-    for(int i=0;i<pos-2;i++) temp=temp->next;
-    struct node* temp1=temp->next;
-    temp->next=temp1->next;
-    temp1->next->prev=temp;
-    free(temp1); 
+
+    // empty list 
+    if (!head){
+        return DLL_EMPTY;
+    }
+
+    // single node
+    if(pos == 1){
+        return del_beg();
+    }
+
+    node *temp = head;
+    for(int i = 0; i < pos - 2; i++){
+        if(temp->next == NULL){
+            return DLL_INVALID_POS;
+        }
+        temp = temp->next;
+    }
+
+    node *del = temp->next;
+    
+    // invalid pos
+    if(del == NULL){
+        return DLL_INVALID_POS;
+    }
+
+    // last node 
+    if(del->next == NULL){
+        return del_end();
+    }
+
+    // general case
+    temp->next = del->next;
+    del->next->prev = temp;
+    free(del);
+
+    return DLL_OK;
 }
-void delete_last(){
-    if(head==NULL){
-        printf("ERROR: EMPTY LIST");
-        return;
+
+DLLStatus del_end(){
+    // empty list
+    if(!head){
+        return DLL_EMPTY;
     }
-    struct node* temp=tail;
-    tail=tail->prev;
-    tail->next=NULL;
+    // single node
+    if(head == tail){
+        free(head);
+        head = tail = NULL;
+        return DLL_OK;
+    }
+
+    // general case
+    node* temp = tail;
+    tail = tail->prev;
+    tail->next = NULL;
     free(temp);
+    
+    return DLL_OK; 
 }
-void del_first_occ(int x){
-    if(head==NULL){
-        printf("ERROR: EMPTY LIST");
-        return;
+
+DLLStatus del_element(int x){
+    if(!head){
+        return DLL_EMPTY;
     }
-    struct node* temp=head;
-    while(temp->next->data!=x) temp=temp->next;
-    struct node* temp1=temp->next;
-    temp->next=temp1->next;
-    temp1->prev=temp;
-    free(temp1);
-}
-int counter(){
-    struct node* temp=tail;
-    int count=0;
-    while(temp!=NULL) {
-        count++;
-        temp=temp->prev;
+
+    int found = 0;
+
+    node *temp = head;
+    while(temp != NULL){
+        if(temp->data == x){
+            found = 1;
+            break;
+        }
+        temp = temp->next;
     }
-    return count;
+
+    if(found == 0){
+        return DLL_ELEMENT_NOT_FOUND;
+    }
+
+    if(temp->prev == NULL){
+        return del_beg();
+    }
+
+    if(temp->next == NULL){
+        return del_end();
+    }
+
+    node *temp1 = temp->prev;
+    temp1->next = temp->next;
+    temp->next->prev = temp1;
+    free(temp);
+
+    return DLL_OK;
 }
-void sort(){
-    if(head == NULL) return;
-    int n=counter();
-    for(int i = 0; i < n - 1; i++){
-        struct node* temp = head;
-        for(int j = 0; j < n - i - 1; j++){
+
+DLLStatus del_all_occurances(int x){
+    if(!head){
+        return DLL_EMPTY;
+    }
+
+    int found = 0;
+    node *temp = head;
+
+    while(temp){
+
+        if(temp->data == x){
+
+            found = 1;
+            node *next = temp->next; 
+
+            if(temp->prev == NULL){
+                del_beg(); 
+                temp = next; 
+                continue;
+            }
+
+            if(temp->next == NULL){
+                del_end(); 
+                temp = next; 
+                continue;
+            }
+
+            temp->prev->next = temp->next;
+            temp->next->prev = temp->prev;
+
+            free(temp);
+            temp = next;
+        }
+        else{
+            temp = temp->next;
+        }
+    }
+
+    if(!found){
+        return DLL_ELEMENT_NOT_FOUND;
+    }
+
+    return DLL_OK;
+}
+
+DLLStatus del_duplicates(void){
+    if(!head){
+        return DLL_EMPTY;
+    }
+
+    if(!head->next){
+        return DLL_OK;
+    }
+
+    sort();
+
+    node* temp = head;
+
+    while(temp && temp->next){
+
+        if(temp->data == temp->next->data){
+
+            node *del = temp->next;
+            temp->next = del->next;
+
+            if(del->next == NULL){
+                tail = temp;
+            }
+            else{
+                del->next->prev = temp;
+            }
+            free(del);
+        }
+        else{ 
+            temp = temp->next;
+        }
+    }
+    return DLL_OK;
+}
+
+DLLStatus update(int pos, int x){   
+    if(pos <= 0){
+        return DLL_INVALID_POS;
+    }
+
+    if(!head){
+        return DLL_EMPTY;
+    }
+
+    node *temp = head;
+    for(int i = 0; i < pos - 1; i++){
+        if(temp->next == NULL){
+            return DLL_INVALID_POS;
+        }
+        temp = temp->next;
+    }
+
+    temp->data = x;
+    return DLL_OK;
+}
+
+DLLStatus sort(void){
+    if(!head){
+        return DLL_EMPTY;
+    }
+
+    if(head->next == NULL){
+        return DLL_OK;
+    }
+
+    int total = node_counter(&total);
+    
+    for(int i = 0; i < total; i++){
+        node *temp = head; 
+        
+        for(int j = 0; j < total - i - 1; j++){    
             if(temp->next != NULL && temp->data > temp->next->data){
                 int t = temp->data;
                 temp->data = temp->next->data;
@@ -130,142 +423,78 @@ void sort(){
             temp = temp->next;
         }
     }
+    
+    return DLL_OK;
 }
-int search(int x){
-    int found=0,loc=1;
-    struct node* temp=head;
-    int n=counter();
-    for(int i=0;i<n;i++){
-        if(temp->data==x){
-            found=1;
+
+DLLStatus clear_list(void){
+    if(!head){
+        return DLL_OK;
+    }
+    node *temp = head;
+    while(temp){
+        node *next = temp->next;
+        free(temp);
+        temp = next;
+    }
+    head = tail = NULL;
+
+    return DLL_OK;
+}
+
+DLLStatus node_counter(int *result){
+    int count = 0;
+    node *temp = head;
+    
+    while(temp){
+        count += 1;
+        temp = temp->next;
+    }
+
+    *result = count;
+    return DLL_OK;
+}
+
+DLLStatus search(int x, int *result){
+    if(!head){
+        return DLL_EMPTY;
+    }
+    int count = 0;
+    node *temp = head;
+
+    while(temp){
+        count += 1;
+        if(temp->data == x){
             break;
         }
-        temp=temp->next;
-        loc++;
-    }
-    if(found) return loc;
-    else return -1;
-}
-void reverse(){
-    struct node* start=head;
-    struct node* end=tail;
-    int n=counter();
-    for(int i=0;i<n/2;i++){
-        int temp=start->data;
-        start->data=end->data;
-        end->data=temp;
-        start=start->next;
-        end=end->prev;
-    }
-    printf("After REVERSAL ");
-}
-int get_ele(int pos){
-
-    if(head == NULL)
-        return -1;
-
-    struct node* temp = head;
-    int i = 1;
-
-    while(temp != NULL && i < pos){
         temp = temp->next;
-        i++;
     }
 
-    if(temp == NULL)
-        return -1;
+    if(!temp){
+        return DLL_ELEMENT_NOT_FOUND;
+    }
 
-    return temp->data;
+    *result = count;
+    return DLL_OK;
 }
-void update(int pos,int x){
-    struct node* temp=head;
-    for(int i=0;i<pos-1;i++) temp=temp->next;
-    temp->data=x;
-}
-void del_all_occ(int x){
-    struct node* temp=head;
-    while(head!=NULL && head->data==x){
-        delete_beginning();
+
+DLLStatus get_element(int pos, int *result){
+    if(pos <= 0){
+        return DLL_INVALID_POS;
     }
-    while(tail!=NULL && tail->data==x){
-        delete_last();   
+    
+    if(!head){
+        return DLL_EMPTY;
     }
-    while(temp->next!=NULL){
-        if(temp->next->data==x){
-            struct node* temp1=temp->next;
-            temp->next=temp1->next;
-            temp1->next->prev=temp;
-            free(temp1);
+
+    node *temp = head;
+    for(int i = 0; i < pos - 1; i++){
+        if(temp->next == NULL){
+            return DLL_INVALID_POS;
         }
-        else temp=temp->next;
+        temp = temp->next;
     }
-}
-void del_dupes(int x){
-    struct node* temp=head;
-    int count=0;
-    while(temp->next!=NULL){
-        if(temp->next->data==x){
-            count++;
-            if(count>1){
-                if(temp->next==tail) delete_last();
-                else{
-                    struct node*temp1=temp->next;
-                    temp->next=temp1->next;
-                    temp1->next->prev=temp;
-                    free(temp1);
-                }
-            }
-            else temp=temp->next;
-        }
-        else temp=temp->next;
-    }
-}
-void insert_after(int x, int y){
-    struct node* new=(struct node*)malloc(sizeof(struct node));
-    struct node*temp=head;
-    while(temp->data!=x){
-        temp=temp->next;
-        if(temp==NULL){
-            printf("Element Not Found");
-            return;
-        }
-    }
-    if(temp==tail){
-        insert_last(y);
-        return;
-    }
-    new->data=y;
-    new->next=temp->next;
-    new->prev=temp;
-    temp->next->prev=new;
-    temp->next=new;
-}
-void insert_before(int x, int y){
-    struct node* new=(struct node*)malloc(sizeof(struct node));
-    struct node*temp=head;
-    while(temp->data!=x){
-        temp=temp->next;
-        if(temp==NULL){
-            printf("Element Not Found");
-            return;
-        }
-    }
-    if(temp==head){
-        insert_beginning(y);
-        return;
-    }
-    new->data=y;
-    new->next=temp;
-    new->prev=temp->prev;
-    temp->prev->next=new;
-    temp->prev=new;
-}
-void clear_list(){
-    struct node *temp;
-    while(head != NULL){
-        temp = head;
-        head = head->next;
-        free(temp);
-    }   
-    tail = NULL;
+
+    *result = temp->data;
+    return DLL_OK;
 }
