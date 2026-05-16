@@ -794,4 +794,4 @@ void DisplayOutput(AppState *app){
     const char* msg = OutputMsg(app->CurrentOp);
     DrawText(TextFormat("%s %d",msg, app->ret_value), app->displaybox.x + 20, app->displaybox.y + 20, 30, BLACK);
 }
-//gcc frontend_update.c main.c -o DLL_GUI.exe -IC:/raylib/raylib/src -LC:/raylib/raylib/src -lraylib -lopengl32 -lgdi32 -lwinmm
+//gcc main.c dll.c -o DLL_GUI.exe -IC:/raylib/raylib/src -LC:/raylib/raylib/src -lraylib -lopengl32 -lgdi32 -lwinmm
