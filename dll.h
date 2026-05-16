@@ -8,7 +8,8 @@ typedef enum{
     DLL_INVALID_POS,
     DLL_NOT_FOUND,
     DLL_ELEMENT_NOT_FOUND,
-    DLL_ALLOC_FAILED
+    DLL_ALLOC_FAILED,
+    DLL_INVALID_INPUT
 }DLLStatus;
 
 typedef struct node{
